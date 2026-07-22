@@ -9,4 +9,11 @@ i started designing the prototypes and came up with a design drawing, which enta
 ![design image v1](images/design-v1.png)
 
 
- ** total time spent: 1.5 hours **
+ ** total time spent: 2 hours **
+
+# july 23: detailed CAD & exploded assembly design
+worked on breaking down the full internal layout and exploded assembly for the neckband. finalized the rear electronics box containing the ESP32-S3 Mini, PCM5102A I2S DAC board, and 1000mAh LiPo battery. mapped out the wiring conduits running through the flexible TPU housing down to the contact pads, and designed a labyrinth-style strain relief to keep the wiring durable.
+
+![design image v1](images/design-v1.png)
+
+**total time spent: 2.5 hours**
