@@ -22,7 +22,8 @@ worked on breaking down the full internal layout and exploded assembly for the n
 
 spent time searching for all necessary electronic modules, hardware, and raw materials needed to construct the design. sourced the ESP32-S3 Mini, PCM5102A DAC, TP4056 USB-C charging module, 1000mAh LiPo battery, bone conduction transducers, tactile buttons, M2 heat-set inserts, silicone wiring, and 3D printing filaments from single-supplier options to streamline procurement.
 
-![shopping_cart] (images/cart-1.png)
-![shopping_cart] (images/cart-2.png)
+![shopping_cart](images/cart-1.png)
+
+![shopping_cart](images/cart-2.png)
 
 ** total time spent: 5 hours**
