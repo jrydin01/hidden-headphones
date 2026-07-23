@@ -31,3 +31,10 @@ spent time searching for all necessary electronic modules, hardware, and raw mat
 ![cart 2](images/cart-2.png)
 
 **total time spent: 5 hours**
+
+# july 23: v2 design drawing & architecture overhaul
+spent significant time re-architecting the system blueprint for the second revision of the headphones. redesigned the rear electronics box to include dual pam8302 amps, pcm1808 adc integration, and an updated multi-cell lipo power management circuit. updated the entire schematic to detail IPX8-rated sealed tpu contact pads, acoustic tuning ports for enhanced bass, and a dedicated antenna keep-out zone for the esp32-s3.
+
+![design image v2](images/design-v2.png)
+
+**total time spent: 10 hours**
