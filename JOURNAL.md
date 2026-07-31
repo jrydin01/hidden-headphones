@@ -38,3 +38,10 @@ spent significant time re-architecting the system blueprint for the second revis
 ![design image v2](images/design-v2.png)
 
 **total time spent: 10 hours**
+
+# July 31: worked on 3d model of housing
+Finally wrapped up this phase of the 3D model for the housing—it took a full 48 hours of back-and-forth iteration, but it’s finally where it needs to be. Designing something that’s supposed to be both functional and comfortable is a real balancing act, and getting the wall thickness right so it’s sturdy without being overly bulky definitely tested my patience.
+I managed to get the main enclosure swept and hollowed out properly, along with lining up all the internal mount points for the hardware. After all those hours staring at the screen, it’s really satisfying to see it actually look like a real product instead of just floating sketch lines.
+Next step is double-checking all the clearances and tolerances before running a test print or moving on to final assembly tweaks. Glad to have this milestone locked in.
+![3d model](images/neckband.png)
+**total time spent: 48 hours**
