@@ -45,3 +45,4 @@ I managed to get the main enclosure swept and hollowed out properly, along with 
 Next step is double-checking all the clearances and tolerances before running a test print or moving on to final assembly tweaks. Glad to have this milestone locked in.
 ![3d model](images/neckband.png)
 **total time spent: 48 hours**
+
