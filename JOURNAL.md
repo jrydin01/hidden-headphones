@@ -32,12 +32,16 @@ spent time searching for all necessary electronic modules, hardware, and raw mat
 
 **total time spent: 5 hours**
 
+---
+
 # july 23: v2 design drawing & architecture overhaul
 spent significant time re-architecting the system blueprint for the second revision of the headphones. redesigned the rear electronics box to include dual pam8302 amps, pcm1808 adc integration, and an updated multi-cell lipo power management circuit. updated the entire schematic to detail IPX8-rated sealed tpu contact pads, acoustic tuning ports for enhanced bass, and a dedicated antenna keep-out zone for the esp32-s3.
 
 ![design image v2](images/design-v2.png)
 
 **total time spent: 10 hours**
+
+---
 
 # July 31: worked on 3d model of housing
 Finally wrapped up this phase of the 3D model for the housing—it took a full 48 hours of back-and-forth iteration, but it’s finally where it needs to be. Designing something that’s supposed to be both functional and comfortable is a real balancing act, and getting the wall thickness right so it’s sturdy without being overly bulky definitely tested my patience.
@@ -46,3 +50,11 @@ Next step is double-checking all the clearances and tolerances before running a 
 ![3d model](images/neckband.png)
 **total time spent: 48 hours**
 
+---
+
+# August 14: learnt how to make a pcb and did it
+After a massive learning curve, I went from having zero idea how custom circuit boards work to completely designing the PCB for the neckband. Learnt the full workflow in KiCad—drawing schematic connections, setting up the power subsystem with the TP4056 charger, and wiring the I2S audio channels between the ESP32-S3 and PCM5102A DAC. Spent hours debugging schematic errors, unmuting the DAC, fixing short circuits, and assigning the right physical footprints to all the push buttons, resistors, and transducers. Once the netlist passed inspection, I pushed everything to the PCB editor, arranged the layout, and prepared the Gerber manufacturing files for fabrication.
+
+![pcb schematic](images/pcb-schematic.png)
+
+**total time spent: 100 hours**
