@@ -58,3 +58,14 @@ After a massive learning curve, I went from having zero idea how custom circuit 
 ![pcb schematic](images/pcb-schematic.png)
 
 **total time spent: 100 hours**
+
+# August 14: firmware development & flashing guide
+With the PCB schematic finalized and ready for fab, I shifted focus to writing the custom firmware for the ESP32-S3 microcontroller. Developed a lightweight C++ application using the PlatformIO environment and the Arduino framework.
+
+Integrated the `ESP32-A2DP` audio sink library to handle Bluetooth A2DP audio streaming directly from a phone or laptop under the device name **"Hidden Headphones"**. The code configures hardware I2S channels (`LRCK` on GPIO21, `BCK` on GPIO26, `DIN` on GPIO1) to route raw PCM audio data straight into the PCM5102A DAC module. Built in software debouncing routines for the active-LOW volume buttons (`SW1` on GPIO0, `SW2` on GPIO1) utilizing internal pull-up resistors to eliminate mechanical switch noise. 
+
+Mapped out a complete flashing procedure, CDC serial output monitoring configuration, and hardware verification strategy for when the physical PCBs arrive from the factory.
+
+![firmware structure](images/firmware-dev.png)
+
+**total time spent: 80 hours**
