@@ -10,7 +10,7 @@ i started designing the prototypes and came up with a design drawing, which enta
 
 ![design image v1](images/design-v1.png)
 
-**total time spent: 2 hours**
+**total time spent: 40 hours**
 
 ---
 
