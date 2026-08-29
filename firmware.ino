@@ -1,126 +1,120 @@
-// 1. Force the ESP32 platform architecture macro required by ESP32-A2DP
-#ifndef ARDUINO_ARCH_ESP32
-#define ARDUINO_ARCH_ESP32
-#endif
+/*
+ * Hidden Headphones - ESP32 Bluetooth A2DP firmware
+ *
+ * This sketch targets an original ESP32/WROOM-32 board. Unlike the ESP32-S3,
+ * the original ESP32 supports Bluetooth Classic A2DP for phone audio.
+ */
 
-#ifndef CONFIG_IDF_TARGET_ESP32S3
-#define CONFIG_IDF_TARGET_ESP32S3
-#endif
-
-// 2. Include core Espressif & Arduino headers FIRST
 #include <Arduino.h>
-#include <sdkconfig.h>
-
-// 3. Include Audio & A2DP Libraries
 #include <BluetoothA2DPSink.h>
-#include <AudioTools.h>
+#include <driver/i2s.h>
 
-// ==========================================
-// PIN DEFINITIONS
-// ==========================================
+// I2S connection to the PCM5102A.
+constexpr gpio_num_t I2S_BCK_PIN = GPIO_NUM_26;
+constexpr gpio_num_t I2S_LRCK_PIN = GPIO_NUM_25;
+constexpr gpio_num_t I2S_DATA_PIN = GPIO_NUM_22;
 
-// I2S Audio Pins for PCM5102A DAC
-#define I2S_LRCK_PIN   21    // Word Select / LRCK
-#define I2S_BCK_PIN    26    // Bit Clock / BCK
-#define I2S_DATA_PIN   1     // Serial Data Out / DIN
+// Active-low controls from the diagram. Keep these separate from I2S pins.
+constexpr gpio_num_t BTN_VOL_UP = GPIO_NUM_16;
+constexpr gpio_num_t BTN_VOL_DOWN = GPIO_NUM_17;
+constexpr gpio_num_t BTN_PLAY_PAUSE = GPIO_NUM_18;
+constexpr gpio_num_t LED_STATUS = GPIO_NUM_19;
 
-// Button GPIO Pins (Active LOW - Connected to GND when pressed)
-#define BTN_VOL_UP     0     // SW1: Volume Up
-#define BTN_VOL_DOWN   1     // SW2: Volume Down / Multi-function
+constexpr uint32_t BUTTON_DEBOUNCE_MS = 50;
+constexpr int16_t VOLUME_STEP = 10;
+constexpr int16_t MAX_VOLUME = 127;
 
-// Debounce Timing Constants (Renamed to avoid conflict with AudioTools)
-const unsigned long BUTTON_DEBOUNCE_MS = 50; 
+BluetoothA2DPSink a2dpSink;
 
-// Button State Tracking Struct
 struct Button {
-  uint8_t pin;
-  bool lastState;
-  bool currentState;
-  unsigned long lastDebounceTime;
+  gpio_num_t pin;
+  bool lastReading;
+  bool stableState;
+  uint32_t lastChangeMs;
+  void (*onPress)();
 };
 
-Button btnVolUp   = {BTN_VOL_UP, HIGH, HIGH, 0};
-Button btnVolDown = {BTN_VOL_DOWN, HIGH, HIGH, 0};
+int16_t volume = 64;
+bool playing = true;
 
-// A2DP Sink Object
-BluetoothA2DPSink a2dp_sink;
-
-// ==========================================
-// FUNCTION DECLARATIONS
-// ==========================================
-void handleButton(Button &btn, void (*onPress)());
 void onVolumeUp();
 void onVolumeDown();
+void onPlayPause();
 
-// ==========================================
-// SETUP & INITIALIZATION
-// ==========================================
-void setup() {
-  Serial.begin(115200);
-  Serial.println("Starting Hidden Bone Conduction Headphone Firmware...");
+Button buttons[] = {
+    {BTN_VOL_UP, HIGH, HIGH, 0, onVolumeUp},
+    {BTN_VOL_DOWN, HIGH, HIGH, 0, onVolumeDown},
+    {BTN_PLAY_PAUSE, HIGH, HIGH, 0, onPlayPause},
+};
 
-  // Initialize Button GPIOs with Internal Pull-Ups
-  pinMode(btnVolUp.pin, INPUT_PULLUP);
-  pinMode(btnVolDown.pin, INPUT_PULLUP);
-
-  // Configure I2S Hardware Pins for PCM5102A DAC
-  i2s_pin_config_t my_pin_config = {
-      .bck_io_num = I2S_BCK_PIN,
-      .ws_io_num = I2S_LRCK_PIN,
-      .data_out_num = I2S_DATA_PIN,
-      .data_in_num = I2S_PIN_NO_CHANGE
-  };
-  
-  a2dp_sink.set_pin_config(my_pin_config);
-
-  // Start Bluetooth A2DP Audio Receiver Service
-  a2dp_sink.start("Hidden Headphones");
-
-  Serial.println("Bluetooth A2DP Sink ready. Connect via Bluetooth!");
+void configureI2S() {
+  i2s_pin_config_t pins = {};
+  pins.bck_io_num = I2S_BCK_PIN;
+  pins.ws_io_num = I2S_LRCK_PIN;
+  pins.data_out_num = I2S_DATA_PIN;
+  pins.data_in_num = I2S_PIN_NO_CHANGE;
+  a2dpSink.set_pin_config(pins);
 }
 
-// ==========================================
-// MAIN LOOP
-// ==========================================
-void loop() {
-  handleButton(btnVolUp, onVolumeUp);
-  handleButton(btnVolDown, onVolumeDown);
-  delay(10); // Yield to prevent watchdog triggers
-}
+void handleButton(Button &button) {
+  const bool reading = digitalRead(button.pin);
+  const uint32_t now = millis();
 
-// ==========================================
-// BUTTON HANDLING & CALLBACKS
-// ==========================================
-void handleButton(Button &btn, void (*onPress)()) {
-  bool reading = digitalRead(btn.pin);
-
-  if (reading != btn.lastState) {
-    btn.lastDebounceTime = millis();
+  if (reading != button.lastReading) {
+    button.lastChangeMs = now;
+    button.lastReading = reading;
   }
 
-  if ((millis() - btn.lastDebounceTime) > BUTTON_DEBOUNCE_MS) {
-    if (reading != btn.currentState) {
-      btn.currentState = reading;
-
-      if (btn.currentState == LOW) {
-        onPress();
-      }
+  if (now - button.lastChangeMs >= BUTTON_DEBOUNCE_MS && reading != button.stableState) {
+    button.stableState = reading;
+    if (button.stableState == LOW) {
+      button.onPress();
     }
   }
-
-  btn.lastState = reading;
 }
 
 void onVolumeUp() {
-  int currentVol = a2dp_sink.get_volume();
-  int newVol = min(127, currentVol + 10);
-  a2dp_sink.set_volume(newVol);
-  Serial.printf("Volume UP: %d\n", newVol);
+  volume = min<int16_t>(MAX_VOLUME, a2dpSink.get_volume() + VOLUME_STEP);
+  a2dpSink.set_volume(volume);
+  Serial.printf("Volume UP: %d/127\n", volume);
 }
 
 void onVolumeDown() {
-  int currentVol = a2dp_sink.get_volume();
-  int newVol = max(0, currentVol - 10);
-  a2dp_sink.set_volume(newVol);
-  Serial.printf("Volume DOWN: %d\n", newVol);
+  volume = max<int16_t>(0, a2dpSink.get_volume() - VOLUME_STEP);
+  a2dpSink.set_volume(volume);
+  Serial.printf("Volume DOWN: %d/127\n", volume);
+}
+
+void onPlayPause() {
+  playing = !playing;
+  if (playing) {
+    a2dpSink.play();
+  } else {
+    a2dpSink.pause();
+  }
+  digitalWrite(LED_STATUS, playing ? HIGH : LOW);
+  Serial.printf("Playback %s\n", playing ? "started" : "paused");
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(200);
+  Serial.println("Starting Hidden Headphones ESP32 Bluetooth A2DP firmware");
+
+  pinMode(LED_STATUS, OUTPUT);
+  digitalWrite(LED_STATUS, HIGH);
+  for (Button &button : buttons) {
+    pinMode(button.pin, INPUT_PULLUP);
+  }
+
+  configureI2S();
+  a2dpSink.start("Hidden Headphones");
+  a2dpSink.set_volume(volume);
+  Serial.println("Bluetooth A2DP sink and PCM5102A I2S output ready");
+}
+
+void loop() {
+  for (Button &button : buttons) {
+    handleButton(button);
+  }
 }

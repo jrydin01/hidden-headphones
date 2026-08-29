@@ -12,12 +12,12 @@ This repository contains the design documentation, KiCad source files, firmware,
 
 ![Design Revision v2](images/design-v2.png)
 
-The audio path begins with a phone or computer sending Bluetooth A2DP audio to the ESP32-S3. The microcontroller outputs stereo PCM audio over I2S to the PCM5102A DAC. Two PAM8302A mono amplifiers drive the left and right bone conduction transducers installed in sealed TPU contact pads.
+The audio path begins with a phone or computer sending Bluetooth Classic A2DP audio to the original ESP32. The microcontroller outputs stereo PCM audio over I2S to the PCM5102A DAC. Two PAM8302A mono amplifiers drive the left and right bone conduction transducers installed in sealed TPU contact pads.
 
 The project utilizes a custom electronics assembly, dedicated power subsystem, and 3D-printed housing:
 
-* **Core processor:** ESP32-S3 Mini with Wi-Fi and Bluetooth
-* **Audio input:** Bluetooth A2DP sink running on the ESP32-S3
+* **Core processor:** Original ESP32-WROOM-32 development board with Wi-Fi and Bluetooth Classic
+* **Audio input:** Bluetooth A2DP sink running on the ESP32
 * **Audio conversion:** PCM5102A stereo I2S DAC
 * **Amplification:** Two PAM8302A 2.5 W class-D mono amplifier boards
 * **Transducers:** Two 8 ohm, 1 W bone conduction transducers
@@ -27,15 +27,17 @@ The project utilizes a custom electronics assembly, dedicated power subsystem, a
 
 ### Audio and control pins
 
-The current firmware uses the following ESP32-S3 GPIO assignments:
+The current firmware uses the following original ESP32 GPIO assignments:
 
 | Function | GPIO | Notes |
 | --- | ---: | --- |
-| I2S LRCK / word select | 21 | PCM5102A clock signal |
+| I2S LRCK / word select | 25 | PCM5102A clock signal |
 | I2S BCK / bit clock | 26 | PCM5102A clock signal |
-| I2S data out | 1 | PCM5102A serial audio data |
-| Volume up | 0 | Active LOW, SW1 |
-| Volume down | 1 | Active LOW, SW2 |
+| I2S data out | 22 | PCM5102A serial audio data |
+| Volume up | 16 | Active LOW, SW1 |
+| Volume down | 17 | Active LOW, SW2 |
+| Play/pause | 18 | Active LOW, SW3 |
+| Status LED | 19 | LED_STATUS output |
 
 The buttons use a 50 ms software debounce interval. A press changes the Bluetooth sink volume by 10 steps, clamped to the supported range of 0 to 127. The device advertises as **Hidden Headphones**.
 
@@ -57,7 +59,7 @@ The complete sourcing list is available in [BOM.csv](BOM.csv). The main assembli
 
 | Category | Part | Quantity |
 | --- | --- | ---: |
-| Microcontroller | ESP32-S3 Mini development board | 1 |
+| Microcontroller | ESP32-WROOM-32 development board | 1 |
 | Audio DAC | PCM5102A I2S stereo module | 1 |
 | Amplifier | PAM8302A mono amplifier board | 2 |
 | Power management | USB-C TP4056 charging and protection module | 1 |
@@ -88,30 +90,29 @@ The neckband is intended to use flexible TPU sections for comfort and PETG for t
 
 ## Firmware
 
-The source firmware is available in [firmware/firmware.ino](firmware/firmware.ino). It uses the Arduino framework on the ESP32-S3 and the `ESP32-A2DP` and `AudioTools` libraries.
+The source firmware is available in [firmware.ino](firmware.ino). It uses the Arduino framework and `ESP32-A2DP` to receive Bluetooth audio and route it over I2S to the PCM5102A and PAM8302A amplifiers. It also handles the three active-low controls and status LED shown in the design diagram.
 
 The firmware currently:
 
 1. Starts a Bluetooth A2DP sink named `Hidden Headphones`.
-2. Configures the ESP32-S3 I2S output for the PCM5102A.
-3. Enables internal pull-ups for the volume buttons.
-4. Debounces button input and applies volume changes.
-5. Reports startup and volume changes over the serial monitor at 115200 baud.
+2. Configures the ESP32 I2S output for the PCM5102A.
+3. Enables internal pull-ups for the volume and play/pause buttons.
+4. Debounces button input and applies software volume scaling.
+5. Controls A2DP playback and the status LED with the play/pause button.
+6. Reports startup and control changes over the serial monitor at 115200 baud.
 
 The root-level [firmware.ino](firmware.ino) is also retained as a firmware source snapshot. Keep the two copies synchronized when making firmware changes.
 
 ### Flashing and verification
 
-1. Install the ESP32 Arduino board support package or configure an equivalent PlatformIO ESP32-S3 environment.
-2. Install the `ESP32-A2DP` and `AudioTools` libraries.
-3. Select the connected ESP32-S3 board and its USB serial port.
-4. Flash `firmware/firmware.ino`.
-5. Open a serial monitor at 115200 baud.
-6. Confirm the `Bluetooth A2DP Sink ready` message.
-7. Pair a phone or computer with **Hidden Headphones**.
-8. Verify left and right audio output and test both volume buttons.
+1. Install the ESP32 Arduino board support package and the `ESP32-A2DP` library.
+2. Select an original ESP32/WROOM-32 board and its USB serial port.
+3. Flash `firmware.ino`.
+4. Open a serial monitor at 115200 baud.
+6. Confirm the `Bluetooth A2DP sink and PCM5102A I2S output ready` message.
+7. Pair a phone or computer with **Hidden Headphones** and verify stereo audio, volume, and play/pause controls.
 
-The pin assignments should be checked against the assembled PCB before powering the complete system. GPIO 1 is used for both I2S data output and the volume-down button in the current firmware, so the final hardware revision must confirm that this multiplexing is intentional and electrically compatible.
+The pin assignments should be checked against the revised PCB before powering the complete system. The selected GPIOs avoid GPIO0 boot strapping and GPIO1 serial TX conflicts on the ESP32-WROOM-32. The PCB must match this mapping before flashing the firmware.
 
 ## Repository structure
 
@@ -122,7 +123,7 @@ The pin assignments should be checked against the assembled PCB before powering 
 ├── LICENSE                                      # CC0-1.0 license
 ├── README.md                                    # Project overview and build guide
 ├── firmware.ino                                 # Root firmware snapshot
-├── firmware/firmware.ino                        # Working firmware source
+├── firmware.ino                                 # ESP32 Bluetooth A2DP firmware
 ├── rear_box.scad                                # Parametric rear enclosure model
 ├── Hidden_Headphones_All_Components_v3.kicad_sch # KiCad schematic
 ├── Hidden_Headphones_All_Components_v3.kicad_pcb # KiCad PCB layout
@@ -135,7 +136,7 @@ The pin assignments should be checked against the assembled PCB before powering 
 
 The development log in [JOURNAL.md](JOURNAL.md) records the design process and time spent on each stage:
 
-* **Initial concept:** Established the ESP32-S3 audio architecture, collarbone contact pads, TPU housing, and USB-C rechargeable battery system.
+* **Initial concept:** Established the ESP32 audio architecture, collarbone contact pads, TPU housing, and USB-C rechargeable battery system.
 * **CAD and assembly:** Designed the rear electronics box, internal mounting layout, cable conduits, and labyrinth-style strain relief.
 * **Component sourcing:** Selected the controller, DAC, amplifiers, charging module, battery, transducers, controls, hardware, wiring, and print materials.
 * **Architecture revision:** Added dual PAM8302A amplifiers, revised the power system, and documented the antenna keep-out and sealed contact-pad concepts.
